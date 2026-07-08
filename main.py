@@ -13,6 +13,7 @@ from tools.memory_tool import MemoryTool
 from memory.long_term import LongTermMemory
 from memory.short_term import ShortTermMemory
 from memory.token_counter import TokenCounter
+from tools.subagent_tool import SubagentTool
 
 from memory.long_term_chroma import LongTermMemoryChroma
 
@@ -61,6 +62,16 @@ async def init_services(config):
     conv_manager = ConversationManager(llm, registry, memory_manager)
     conv_manager.prune_strategy = config.get('context', {}).get('prune_strategy', 'oldest_first')
     conv_manager.compaction_threshold = config.get('context', {}).get('compaction_threshold', 0.8)
+    
+    def agent_factory():
+        sub_stm = ShortTermMemory(config['context']['max_tokens'], tc)
+        sub_mm = MemoryManager(ltm, sub_stm)
+        sub_cm = ConversationManager(llm, registry, sub_mm)
+        sub_cm.prune_strategy = config.get('context', {}).get('prune_strategy', 'oldest_first')
+        sub_cm.compaction_threshold = config.get('context', {}).get('compaction_threshold', 0.8)
+        return sub_cm
+        
+    registry.register(SubagentTool(agent_factory))
     
     return memory_manager, registry, conv_manager
 

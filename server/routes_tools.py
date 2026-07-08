@@ -46,3 +46,38 @@ async def clear_conversation(request: Request):
 @router.get("/health")
 async def health_check():
     return {"status": "ok"}
+
+class CustomToolRequest(BaseModel):
+    name: str
+    code: str
+
+@router.post("/tools/custom/install")
+async def install_custom_tool(request: Request, req: CustomToolRequest):
+    import os
+    import importlib.util
+    from tools.registry import Tool
+    
+    file_path = f"tools/custom/{req.name}.py"
+    with open(file_path, "w") as f:
+        f.write(req.code)
+        
+    try:
+        spec = importlib.util.spec_from_file_location(f"tools.custom.{req.name}", file_path)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        
+        tool_class = None
+        for item_name in dir(module):
+            item = getattr(module, item_name)
+            if isinstance(item, type) and issubclass(item, Tool) and item is not Tool:
+                tool_class = item
+                break
+                
+        if not tool_class:
+            return {"success": False, "error": "No Tool class found in code."}
+            
+        tool_instance = tool_class()
+        request.app.state.tool_registry.register(tool_instance)
+        return {"success": True, "message": f"Tool '{tool_instance.name}' registered."}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
