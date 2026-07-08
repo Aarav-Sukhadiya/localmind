@@ -2,10 +2,16 @@
 llm:
   backend: "llama_cpp"            # "llama_cpp" or "lm_studio"
   base_url: "http://localhost:8080/v1"
-  model: "qwen3-8b"
+  model: "ministral-3b"
   api_key: "not-needed"
   temperature: 0.7
   max_tokens: 2048
+  multiplexing:
+    enabled: true
+    small_model_url: "http://localhost:8080/v1"
+    small_model_name: "ministral-3b"
+    large_model_url: "http://localhost:8081/v1"
+    large_model_name: "qwen-35b"
 
 # Context Window
 context:
@@ -35,7 +41,8 @@ tools:
 
 # Memory
 memory:
-  db_path: "data/memory.db"
+  backend: "chromadb"             # "sqlite" or "chromadb"
+  db_path: "data/memory.db"       # path for sqlite, dir for chromadb
   auto_inject: true               # Auto-inject relevant memories into context
   auto_inject_limit: 3            # Max memories to inject per turn
 

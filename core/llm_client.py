@@ -77,3 +77,24 @@ class LLMClient:
         except httpx.RequestError as e:
             logger.error(f"Connection error to LLM backend during stream: {e}")
             raise LLMConnectionError(f"Stream connection failed: {e}")
+
+class MultiplexLLMClient:
+    def __init__(self, small_client: LLMClient, large_client: LLMClient):
+        self.small_client = small_client
+        self.large_client = large_client
+
+    async def chat_completion(
+        self,
+        messages: List[Message],
+        tools: Optional[List[ToolDefinition]] = None,
+        temperature: float = 0.7,
+        max_tokens: int = 2048,
+        stream: bool = False
+    ):
+        # Routing logic: if there are tools requested or a complex prompt, use large_client
+        # For simple conversational queries or summarizations (like compaction), use small_client
+        is_complex = bool(tools) or any("code" in m.content.lower() for m in messages if m.content)
+        client = self.large_client if is_complex else self.small_client
+        
+        logger.info(f"Multiplexing: Routing request to {client.model}")
+        return await client.chat_completion(messages, tools, temperature, max_tokens, stream)

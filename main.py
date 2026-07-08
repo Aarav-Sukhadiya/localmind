@@ -14,6 +14,8 @@ from memory.long_term import LongTermMemory
 from memory.short_term import ShortTermMemory
 from memory.token_counter import TokenCounter
 
+from memory.long_term_chroma import LongTermMemoryChroma
+
 class MemoryManager:
     def __init__(self, ltm, stm):
         self.long_term = ltm
@@ -21,7 +23,10 @@ class MemoryManager:
 
 async def init_services(config):
     # 1. Memory
-    ltm = LongTermMemory(config['memory']['db_path'])
+    if config.get('memory', {}).get('backend') == 'chromadb':
+        ltm = LongTermMemoryChroma(config['memory']['db_path'])
+    else:
+        ltm = LongTermMemory(config['memory']['db_path'])
     await ltm.initialize()
     tc = TokenCounter(config['context']['token_counter'])
     stm = ShortTermMemory(config['context']['max_tokens'], tc)
@@ -41,11 +46,18 @@ async def init_services(config):
         registry.register(MemoryTool(ltm))
         
     # 3. LLM & Conversation
-    llm = LLMClient(
-        base_url=config['llm']['base_url'],
-        model=config['llm']['model'],
-        api_key=config['llm']['api_key']
-    )
+    multiplex_conf = config['llm'].get('multiplexing', {})
+    if multiplex_conf.get('enabled'):
+        from core.llm_client import MultiplexLLMClient
+        small_llm = LLMClient(base_url=multiplex_conf['small_model_url'], model=multiplex_conf.get('small_model_name', config['llm']['model']), api_key=config['llm']['api_key'])
+        large_llm = LLMClient(base_url=multiplex_conf['large_model_url'], model=multiplex_conf.get('large_model_name', config['llm']['model']), api_key=config['llm']['api_key'])
+        llm = MultiplexLLMClient(small_llm, large_llm)
+    else:
+        llm = LLMClient(
+            base_url=config['llm']['base_url'],
+            model=config['llm']['model'],
+            api_key=config['llm']['api_key']
+        )
     conv_manager = ConversationManager(llm, registry, memory_manager)
     conv_manager.prune_strategy = config.get('context', {}).get('prune_strategy', 'oldest_first')
     conv_manager.compaction_threshold = config.get('context', {}).get('compaction_threshold', 0.8)
