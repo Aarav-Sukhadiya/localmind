@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LocalMind</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Chat Panel -->
+        <main class="chat-panel">
+            <header class="header">
+                <h1>LocalMind</h1>
+                <div class="actions">
+                    <button onclick="clearConversation()">Clear</button>
+                </div>
+            </header>
+            <div id="chat-messages" class="messages"></div>
+            <div class="input-area">
+                <textarea id="chat-input" placeholder="Type a message... (Shift+Enter for newline)"></textarea>
+                <button id="send-btn" onclick="sendMessage()">Send</button>
+            </div>
+        </main>
+
+        <!-- Right Sidebar -->
+        <aside class="sidebar">
+            <!-- Memory Panel -->
+            <section class="memory-panel">
+                <h2>Long-Term Memory</h2>
+                <input type="text" id="memory-search" placeholder="Search memories..." onkeyup="searchMemories()">
+                <div id="memory-list" class="memory-list"></div>
+                <button class="add-memory-btn" onclick="addMemory()">+ Add Memory</button>
+            </section>
+
+            <!-- Context Window Panel -->
+            <section class="context-panel">
+                <h2>Context Window</h2>
+                <div class="token-bar-container">
+                    <div class="token-bar-fill" id="token-bar-fill"></div>
+                </div>
+                <div class="token-stats" id="token-stats">0 / 8192 (0%)</div>
+                
+                <h3>Message Breakdown</h3>
+                <div id="context-breakdown" class="context-breakdown"></div>
+            </section>
+        </aside>
+    </div>
+
+    <!-- Status Bar -->
+    <footer class="status-bar">
+        Status: <span id="ws-status">Connecting...</span> | 
+        Model: Qwen3-8B | 
+        Tools: <span id="tool-count">...</span>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="/static/app.js"></script>
+</body>
+</html>

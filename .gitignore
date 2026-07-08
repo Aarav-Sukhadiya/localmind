@@ -1,0 +1,13 @@
+.gitignore patterns for LocalMind
+
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+data/
+*.db
+.env
+.venv/
+venv/
