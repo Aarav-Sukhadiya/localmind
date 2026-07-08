@@ -25,6 +25,13 @@ class ConversationManager:
         msg = Message(role=Role.USER, content=user_message)
         self.memory_manager.short_term.add_message(msg)
         
+        # Check compaction
+        if getattr(self, 'prune_strategy', 'oldest_first') == 'compact':
+            snap = self.memory_manager.short_term.get_context_window_snapshot()
+            if snap.usage_percent > getattr(self, 'compaction_threshold', 0.8) * 100:
+                yield Event(type="thinking", data={"message": "Context window getting full, compacting memory..."})
+                await self._auto_compact()
+        
         yield Event(type="thinking", data={"message": "Processing user input..."})
         
         tools = self.tool_registry.list_tools()
@@ -77,6 +84,28 @@ class ConversationManager:
             yield Event(type="error", data={"error": "Max tool loop iterations reached."})
             
         yield Event(type="done", data={})
+
+    async def _auto_compact(self):
+        messages = self.memory_manager.short_term.get_messages()
+        if len(messages) <= 3:
+            return
+            
+        to_compact = messages[1:-2]
+        if not to_compact:
+            return
+            
+        prompt = "Summarize the following conversation context very briefly, retaining key facts and decisions:\n"
+        for m in to_compact:
+            prompt += f"{m.role.value}: {m.content}\n"
+            
+        try:
+            summary_resp = await self.llm_client.chat_completion([Message(role=Role.USER, content=prompt)], stream=False)
+            summary = summary_resp.choices[0].message.content
+            
+            new_msgs = [messages[0], Message(role=Role.SYSTEM, content=f"[Prior Context Summary]: {summary}")] + messages[-2:]
+            self.memory_manager.short_term.messages = new_msgs
+        except Exception as e:
+            logger.error(f"Compaction failed: {e}")
 
     def get_history(self) -> list[Message]:
         return self.memory_manager.short_term.get_messages()

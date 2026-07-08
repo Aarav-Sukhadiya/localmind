@@ -47,6 +47,8 @@ async def init_services(config):
         api_key=config['llm']['api_key']
     )
     conv_manager = ConversationManager(llm, registry, memory_manager)
+    conv_manager.prune_strategy = config.get('context', {}).get('prune_strategy', 'oldest_first')
+    conv_manager.compaction_threshold = config.get('context', {}).get('compaction_threshold', 0.8)
     
     return memory_manager, registry, conv_manager
 

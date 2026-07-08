@@ -11,7 +11,8 @@ llm:
 context:
   max_tokens: 8192                # Match your model's context length
   token_counter: "tiktoken"       # "tiktoken" or "approximate"
-  prune_strategy: "oldest_first"  # Remove oldest messages when full
+  prune_strategy: "compact"       # "oldest_first" or "compact"
+  compaction_threshold: 0.8       # When context is 80% full, auto-compact
 
 # Tools
 tools:
