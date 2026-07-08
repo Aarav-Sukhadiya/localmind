@@ -61,8 +61,8 @@ class LongTermMemoryChroma:
                         id=meta.get('int_id', int(results['ids'][0][i])),
                         content=doc,
                         category=meta.get('category', 'general'),
-                        created_at=datetime.fromisoformat(created).replace(tzinfo=None) if created else datetime.now(),
-                        updated_at=datetime.fromisoformat(updated).replace(tzinfo=None) if updated else datetime.now()
+                        created_at=created if created else datetime.now().isoformat(),
+                        updated_at=updated if updated else datetime.now().isoformat()
                     ))
             return entries
         return await asyncio.to_thread(_search)
@@ -82,8 +82,8 @@ class LongTermMemoryChroma:
                         id=meta.get('int_id', int(results['ids'][i])),
                         content=doc,
                         category=meta.get('category', 'general'),
-                        created_at=datetime.fromisoformat(created).replace(tzinfo=None) if created else datetime.now(),
-                        updated_at=datetime.fromisoformat(updated).replace(tzinfo=None) if updated else datetime.now()
+                        created_at=created if created else datetime.now().isoformat(),
+                        updated_at=updated if updated else datetime.now().isoformat()
                     ))
             return sorted(entries, key=lambda x: getattr(x, 'updated_at', datetime.now()), reverse=True)
         return await asyncio.to_thread(_list)
@@ -100,8 +100,8 @@ class LongTermMemoryChroma:
                     id=meta.get('int_id', int(results['ids'][0])),
                     content=doc,
                     category=meta.get('category', 'general'),
-                    created_at=datetime.fromisoformat(created).replace(tzinfo=None) if created else datetime.now(),
-                    updated_at=datetime.fromisoformat(updated).replace(tzinfo=None) if updated else datetime.now()
+                    created_at=created if created else datetime.now().isoformat(),
+                    updated_at=updated if updated else datetime.now().isoformat()
                 )
             return None
         return await asyncio.to_thread(_get)

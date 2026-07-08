@@ -18,7 +18,7 @@ def mock_app():
 
 @pytest.fixture
 def client(mock_app):
-    return TestClient(mock_app)
+    return TestClient(mock_app, raise_server_exceptions=False)
 
 def test_routes_memory_errors(client, mock_app):
     mock_app.state.memory_manager.long_term.get.return_value = None
@@ -81,3 +81,25 @@ def test_websocket_chat(client, mock_app):
         assert data["type"] == "response_chunk"
 
     # Testing disconnect gracefully is handled implicitly by fastAPI testclient when closing context
+
+def test_websocket_chat_error(client, mock_app):
+    async def mock_process(msg):
+        raise Exception("test error")
+        yield
+        
+    mock_app.state.conversation_manager.process_message = mock_process
+    
+    with client.websocket_connect("/ws/chat") as websocket:
+        websocket.send_json({"message": "hi"})
+        data = websocket.receive_json()
+        assert data["type"] == "error"
+        assert "test error" in data["data"]["error"]
+
+def test_routes_memory_internal_errors(client, mock_app):
+    mock_app.state.memory_manager.long_term.save.side_effect = Exception("save error")
+    res = client.post("/api/memory", json={"content": "test"})
+    assert res.status_code == 500
+
+    mock_app.state.memory_manager.long_term.list_all.side_effect = Exception("list error")
+    res = client.get("/api/memory")
+    assert res.status_code == 500

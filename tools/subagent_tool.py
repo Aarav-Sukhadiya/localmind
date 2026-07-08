@@ -1,9 +1,9 @@
 import asyncio
 from typing import Optional
-from tools.registry import Tool, ToolResult
+from tools.registry import BaseTool, ToolResult
 from core.schemas import Message, Role
 
-class SubagentTool(Tool):
+class SubagentTool(BaseTool):
     def __init__(self, agent_factory):
         self.agent_factory = agent_factory
 
@@ -53,7 +53,7 @@ class SubagentTool(Tool):
                 if msg.role == Role.ASSISTANT and msg.content:
                     return ToolResult(success=True, output=f"Subagent '{role}' completed the task:\n{msg.content}")
                     
-            return ToolResult(success=False, error="Subagent did not return a concrete text response.")
+            return ToolResult(success=False, output="", error="Subagent did not return a concrete text response.")
             
         except Exception as e:
-            return ToolResult(success=False, error=str(e))
+            return ToolResult(success=False, output="", error=str(e))

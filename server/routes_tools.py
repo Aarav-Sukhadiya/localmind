@@ -55,7 +55,7 @@ class CustomToolRequest(BaseModel):
 async def install_custom_tool(request: Request, req: CustomToolRequest):
     import os
     import importlib.util
-    from tools.registry import Tool
+    from tools.registry import BaseTool
     
     file_path = f"tools/custom/{req.name}.py"
     with open(file_path, "w") as f:
@@ -69,7 +69,7 @@ async def install_custom_tool(request: Request, req: CustomToolRequest):
         tool_class = None
         for item_name in dir(module):
             item = getattr(module, item_name)
-            if isinstance(item, type) and issubclass(item, Tool) and item is not Tool:
+            if isinstance(item, type) and issubclass(item, BaseTool) and item is not BaseTool:
                 tool_class = item
                 break
                 
